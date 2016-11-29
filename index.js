@@ -21,6 +21,7 @@ var key_256 = new Buffer([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 
 var key = AESjs.util.convertStringToBytes("Example128BitKey");
 console.log('Key: ' + key);
+console.log('Size: ' + key.length);
 
 // Convert text to bytes
 var text = 'Text may be any length you wish, no padding is required.';
@@ -85,3 +86,9 @@ console.log('Private Key:\n' + privateDer);
 // http://stackoverflow.com/questions/454048/what-is-the-difference-between-encrypting-and-signing-in-asymmetric-encryption
 // When encrypting, you use their public key to write message and they use their private key to read it.
 // When signing, you use your private key to write message's signature, and they use your public key to check if it's really yours.
+
+// client generate a random aes key
+// use the aes key to encrypt the data you need (rsa take longer time and have length limitation, so better use aes to do encrypt)
+// use the public key to encrypt the aes key
+// pass the encrypted data and the aes key encrypted by rsa public key to server
+// when server receive, decrypt that aes key by private key and then decrypt the attached data by the decrypted aes key
