@@ -1,0 +1,16 @@
+{
+  "name": "rollingcryptones",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aes-js": "^2.1.0",
+    "js-base64": "^2.1.9",
+    "node-rsa": "^0.4.2"
+  }
+}
