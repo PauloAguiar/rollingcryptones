@@ -92,3 +92,20 @@ console.log('Private Key:\n' + privateDer);
 // use the public key to encrypt the aes key
 // pass the encrypted data and the aes key encrypted by rsa public key to server
 // when server receive, decrypt that aes key by private key and then decrypt the attached data by the decrypted aes key
+
+
+// randomstring.generate({
+//   charset: 'abc'
+// });
+// generate(options)
+//       length - the length of the random string. (default: 32) [OPTIONAL]
+//       readable - exclude poorly readable chars: 0OIl. (default: false) [OPTIONAL]
+//       charset - define the character set for the string. (default: 'alphanumeric') [OPTIONAL]
+//             alphanumeric - [0-9 a-z A-Z]
+//             alphabetic - [a-z A-Z]
+//             numeric - [0-9]
+//             hex - [0-9 a-f]
+//       custom - any given characters
+//       capitalization - define whether the output should be lowercase / uppercase only. (default: null) [OPTIONAL]
+//             lowercase
+//             uppercase
