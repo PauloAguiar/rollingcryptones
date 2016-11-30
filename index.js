@@ -22,7 +22,8 @@ app.get('/pkey', function (req, res) {
 	return res.json({'pkey': app.get('pkey')});
 });
 
-app.post('/encrypted', function (req, res) {
+app.post('/data', function (req, res) {
+	console.log('body: ' + JSON.stringify(req.body));
 	return res.json({'message': 'empty'});
 });
 
