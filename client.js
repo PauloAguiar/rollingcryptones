@@ -2,7 +2,6 @@ var async = require('async');
 var secureRandom = require('secure-random');
 var AESjs = require('aes-js');
 var NodeRSA = require('node-rsa');
-var Base64 = require('js-base64').Base64;
 var request = require('request');
 var readline = require('readline');
 
@@ -22,8 +21,15 @@ async.whilst(() => true, function() {
         (payload, next) => {
             var encrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
             var bytes = AESjs.util.convertStringToBytes(payload);
-            var encryptedPayloadb64 = Base64.encode(AESjs.util.convertBytesToString(encrypter.encrypt(bytes)));
+            var encryptedBytes = encrypter.encrypt(bytes);
+            console.log('AES Encrypted Payload(bytes): ', encryptedBytes)
+
+            var encryptedPayloadb64 = encryptedBytes.toString('base64');
             console.log('AES Encrypted Payload(b64): ' + encryptedPayloadb64);
+
+            encryptedBytes = new Buffer(encryptedPayloadb64, 'base64');
+            console.log('AES Encrypted Payload(bytes): ', encryptedBytes)
+
             request.get('http://localhost:3000/pkey', function (err, response, body) {
                 if (err) return next(err);
                 try {
@@ -56,8 +62,8 @@ async.whilst(() => true, function() {
         },
         (response, next) => {
             var decrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
-            var dataBytes = AESjs.util.convertStringToBytes(Base64.decode(response.data));
-            var decrypted = AESjs.util.convertBytesToString(decrypter.decrypt(dataBytes));
+            var dataBytes = new Buffer(response.data, 'base64');
+            var decrypted = decrypter.decrypt(dataBytes).toString('utf8');
             console.log("Decrypted server response:", decrypted);
             next();
         }
