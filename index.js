@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var logger = require('morgan');
 var AESjs = require('aes-js');
 var NodeRSA = require('node-rsa');
+var crypto = require('./crypto');
 
 // Configure Web Server
 var app = express();
@@ -10,13 +11,9 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 
 // Set KEY
-var key = new NodeRSA({b: 1024});
 
-console.log('KEY INFO');
-console.log('Size: ' + key.getKeySize() + ' bits');
-console.log('MaxDataSize: ' + key.getMaxMessageSize() + ' bytes\n');
-
-app.set('pkey', key.exportKey('public'));
+var cryptoServer = new crypto.Server(2048);
+app.set('pkey', cryptoServer.publicKey());
 
 // Routes
 app.get('/pkey', function (req, res) {
@@ -25,30 +22,18 @@ app.get('/pkey', function (req, res) {
 
 app.post('/data', function (req, res) {
   const body = req.body;
+  const cryptoClient = cryptoServer.exchange(body.key);
 
-  const clientRSAEncryptedKey = body.key;
-  console.log('clientRSAEncryptedKey', clientRSAEncryptedKey);
+  const message = cryptoClient.decrypt(body.data);
+  console.log('Client message: ', message);
 
-  const clientAESEncryptedData = body.data;
-  console.log('clientAESEncryptedData', clientAESEncryptedData);
-
-  const clientAESKey = key.decrypt(clientRSAEncryptedKey, 'buffer', 'base64').toJSON().data;
-  console.log('clientAESKey', JSON.stringify(clientAESKey));
-
-  const clientAESCtrDecrypt = new AESjs.ModeOfOperation.ctr(clientAESKey, new AESjs.Counter(5));
-  var dataBytes = new Buffer(clientAESEncryptedData, 'base64');
-  const clientDataBuffer = clientAESCtrDecrypt.decrypt(dataBytes);
-  const clientDecryptedData = clientDataBuffer.toString('utf8');
-  console.log('clientDecryptedData', clientDecryptedData);
-
-  const clientAESCtrEncrypt = new AESjs.ModeOfOperation.ctr(clientAESKey, new AESjs.Counter(5));
-  const message = clientDecryptedData.toUpperCase();
-  const aesEncryptedMessage = clientAESCtrEncrypt.encrypt(message).toString('base64');
-  console.log('message', message);
-  console.log('aesEncryptedMessage', aesEncryptedMessage);
+  const response = message.toUpperCase();
+  const aesEncryptedResponse = cryptoClient.encrypt(response);
+  console.log('Response: ', response);
+  console.log('Encrypted response', aesEncryptedResponse);
 
   return res.json({
-    data: aesEncryptedMessage
+    data: aesEncryptedResponse
   });
 });
 
