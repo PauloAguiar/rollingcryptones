@@ -1,51 +1,68 @@
+var async = require('async');
 var secureRandom = require('secure-random');
 var AESjs = require('aes-js');
 var NodeRSA = require('node-rsa');
 var Base64 = require('js-base64').Base64;
 var request = require('request');
+var readline = require('readline');
 
-var payload = "LAG!!!";
-console.log('Payload: ' + payload);
+const input = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-var aesKey = secureRandom(256 / 8); // 256 bits
-var aesCtr = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
+async.whilst(() => true, function() {
+    var aesKey = secureRandom(256 / 8); // 256 bits
 
-console.log('AES Key: ' + aesKey);
-console.log('AES Size: ' + aesKey.length);
+    console.log('AES Key: ' + aesKey);
+    console.log('AES Size: ' + aesKey.length);
 
-var bytes = AESjs.util.convertStringToBytes(payload);
-var encryptedPayloadb64 = Base64.encode(AESjs.util.convertBytesToString(aesCtr.encrypt(bytes)));
-console.log('AES Encrypted Payload(b64): ' + encryptedPayloadb64);
+    async.waterfall([
+        (next) => input.question("Insert payload: ", (ans) => next(null, ans)),
+        (payload, next) => {
+            var encrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
+            var bytes = AESjs.util.convertStringToBytes(payload);
+            var encryptedPayloadb64 = Base64.encode(AESjs.util.convertBytesToString(encrypter.encrypt(bytes)));
+            console.log('AES Encrypted Payload(b64): ' + encryptedPayloadb64);
+            request.get('http://localhost:3000/pkey', function (err, response, body) {
+                if (err) return next(err);
+                try {
+                    var parsed = JSON.parse(body);
+                    next(null, parsed['pkey'], aesKey, encryptedPayloadb64);
+                } catch (ex) {
+                    next(ex);
+                }
+            });
+        },
+        function (pkey, aesKey, encryptedPayload, next) {
+            var rsaKey = new NodeRSA(pkey);
 
-function OnPublicKeyReceived(pkey) {
-    var rsaKey = new NodeRSA(pkey);
+            console.log("RSA Key:\n" + pkey);
+            console.log('Size: ' + rsaKey.getKeySize() + ' bits');
+            console.log('MaxDataSize: ' + rsaKey.getMaxMessageSize() + ' bytes');
+            console.log("RSA Key IsPublic: " + rsaKey.isPublic());
+            console.log("RSA Key IsPrivate: " + rsaKey.isPrivate());
+            var rsaEncryptedAesKey = rsaKey.encrypt(new Buffer(aesKey), 'base64');
+            console.log('RSA encrypted AES key(b64): ' + rsaEncryptedAesKey);
 
-    console.log("RSA Key:\n" + pkey);
-    console.log('Size: ' + rsaKey.getKeySize() + ' bits');
-    console.log('MaxDataSize: ' + rsaKey.getMaxMessageSize() + ' bytes');
-    console.log("RSA Key IsPublic: " + rsaKey.isPublic());
-    console.log("RSA Key IsPrivate: " + rsaKey.isPrivate());
-    var rsaEncryptedAesKey = rsaKey.encrypt(aesKey, 'base64');
-    console.log('RSA encrypted AES key(b64): ' + rsaEncryptedAesKey);
-
-    request.post('http://localhost:3000/data',
-    {
-        json: { key: rsaEncryptedAesKey, data: encryptedPayloadb64}
-    },
-    function (err, response, body) {
-        if (err)
-            return console.log('Error: ' + err);
-
-        console.log(body)
+            request.post('http://localhost:3000/data',
+            {
+                json: { key: rsaEncryptedAesKey, data: encryptedPayload}
+            },
+            function (err, response, body) {
+                console.log("Server response:", body)
+                next(err, body)
+            });
+        },
+        (response, next) => {
+            var decrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
+            var dataBytes = AESjs.util.convertStringToBytes(Base64.decode(response.data));
+            var decrypted = AESjs.util.convertBytesToString(decrypter.decrypt(dataBytes));
+            console.log("Decrypted server response:", decrypted);
+        }
+    ], function (err) {
+        if (err) {
+            console.log("Error: " + err);
+        }
     });
-}
-
-request.get('http://localhost:3000/pkey', function (err, response, body) {
-    if (err)
-        return console.log('Error: ' + err);
-
-    // Data reception is done, do whatever with it!
-    var parsed = JSON.parse(body);
-
-    return OnPublicKeyReceived(parsed['pkey']);
 });
