@@ -1,9 +1,9 @@
-var async = require('async');
-var secureRandom = require('secure-random');
-var AESjs = require('aes-js');
-var NodeRSA = require('node-rsa');
-var request = require('request');
-var readline = require('readline');
+const async = require('async');
+const secureRandom = require('secure-random');
+const AESjs = require('aes-js');
+const NodeRSA = require('node-rsa');
+const request = require('request');
+const readline = require('readline');
 
 const input = readline.createInterface({
     input: process.stdin,
@@ -11,7 +11,7 @@ const input = readline.createInterface({
 });
 
 async.whilst(() => true, function() {
-    var aesKey = secureRandom(256 / 8); // 256 bits
+    const aesKey = secureRandom(256 / 8); // 256 bits
 
     console.log('AES Key: ' + aesKey);
     console.log('AES Size: ' + aesKey.length);
@@ -19,33 +19,33 @@ async.whilst(() => true, function() {
     async.waterfall([
         (next) => input.question("Insert payload: ", (ans) => next(null, ans)),
         (payload, next) => {
-            var encrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
-            var bytes = AESjs.util.convertStringToBytes(payload);
-            var encryptedBytes = encrypter.encrypt(bytes);
-            console.log('AES Encrypted Payload(bytes): ', encryptedBytes)
+            const encipher = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
+            const bytes = new Buffer(payload);
+            const encryptedBytes = encipher.encrypt(bytes);
+            console.log('AES Encrypted Payload(bytes): ', encryptedBytes);
 
-            var encryptedPayloadb64 = encryptedBytes.toString('base64');
-            console.log('AES Encrypted Payload(b64): ' + encryptedPayloadb64);
+            const encryptedPayloadB64 = encryptedBytes.toString('base64');
+            console.log('AES Encrypted Payload(b64): ' + encryptedPayloadB64);
 
             request.get('http://localhost:3000/pkey', function (err, response, body) {
                 if (err) return next(err);
                 try {
-                    var parsed = JSON.parse(body);
-                    next(null, parsed['pkey'], aesKey, encryptedPayloadb64);
+                    const parsed = JSON.parse(body);
+                    next(null, parsed['pkey'], aesKey, encryptedPayloadB64);
                 } catch (ex) {
                     next(ex);
                 }
             });
         },
         function (pkey, aesKey, encryptedPayload, next) {
-            var rsaKey = new NodeRSA(pkey);
+            const rsaKey = new NodeRSA(pkey);
 
             console.log("RSA Key:\n" + pkey);
             console.log('Size: ' + rsaKey.getKeySize() + ' bits');
             console.log('MaxDataSize: ' + rsaKey.getMaxMessageSize() + ' bytes');
             console.log("RSA Key IsPublic: " + rsaKey.isPublic());
             console.log("RSA Key IsPrivate: " + rsaKey.isPrivate());
-            var rsaEncryptedAesKey = rsaKey.encrypt(new Buffer(aesKey), 'base64');
+            const rsaEncryptedAesKey = rsaKey.encrypt(new Buffer(aesKey), 'base64');
             console.log('RSA encrypted AES key(b64): ' + rsaEncryptedAesKey);
 
             request.post('http://localhost:3000/data',
@@ -58,9 +58,9 @@ async.whilst(() => true, function() {
             });
         },
         (response, next) => {
-            var decrypter = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
-            var dataBytes = new Buffer(response.data, 'base64');
-            var decrypted = decrypter.decrypt(dataBytes).toString('utf8');
+            const decipher = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
+            const dataBytes = new Buffer(response.data, 'base64');
+            const decrypted = decipher.decrypt(dataBytes).toString('utf8');
             console.log("Decrypted server response:", decrypted);
             next();
         }
