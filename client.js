@@ -27,9 +27,6 @@ async.whilst(() => true, function() {
             var encryptedPayloadb64 = encryptedBytes.toString('base64');
             console.log('AES Encrypted Payload(b64): ' + encryptedPayloadb64);
 
-            encryptedBytes = new Buffer(encryptedPayloadb64, 'base64');
-            console.log('AES Encrypted Payload(bytes): ', encryptedBytes)
-
             request.get('http://localhost:3000/pkey', function (err, response, body) {
                 if (err) return next(err);
                 try {
