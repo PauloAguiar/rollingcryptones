@@ -59,6 +59,7 @@ async.whilst(() => true, function() {
             var dataBytes = AESjs.util.convertStringToBytes(Base64.decode(response.data));
             var decrypted = AESjs.util.convertBytesToString(decrypter.decrypt(dataBytes));
             console.log("Decrypted server response:", decrypted);
+            next();
         }
     ], function (err) {
         if (err) {
