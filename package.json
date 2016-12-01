@@ -16,6 +16,7 @@
     "morgan": "^1.7.0",
     "node-rsa": "^0.4.2",
     "randomstring": "^1.1.5",
-    "request": "^2.79.0"
+    "request": "^2.79.0",
+    "secure-random": "^1.1.1"
   }
 }

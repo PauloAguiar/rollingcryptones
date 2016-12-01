@@ -1,4 +1,4 @@
-var randomstring = require('randomstring');
+var secureRandom = require('secure-random');
 var AESjs = require('aes-js');
 var NodeRSA = require('node-rsa');
 var Base64 = require('js-base64').Base64;
@@ -7,11 +7,7 @@ var request = require('request');
 var payload = "LAG!!!";
 console.log('Payload: ' + payload);
 
-var aesPassPhrase = randomstring.generate({
-    length: 256 / 8, // 256 bits
-});
-
-var aesKey = AESjs.util.convertStringToBytes(aesPassPhrase);
+var aesKey = secureRandom(256 / 8); // 256 bits
 var aesCtr = new AESjs.ModeOfOperation.ctr(aesKey, new AESjs.Counter(5));
 
 console.log('AES Key: ' + aesKey);
